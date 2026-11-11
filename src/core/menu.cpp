@@ -421,8 +421,6 @@ void frame(EGLDisplay display, EGLSurface surface) {
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
-    if (playing())
-        mods::draw_effects(ImGui::GetBackgroundDrawList());
     if (on_title && !wanted && title::draw(ImGui::GetBackgroundDrawList(), size, ImVec2(cursor_x, cursor_y), title_click.exchange(false), float(ImGui::GetTime())))
         wanted = true;
     if (wanted)

@@ -81,7 +81,7 @@ extern "C" [[gnu::visibility("default")]] void mod_init() {
     }
     menu::connect(is_mouse_locked ? +[] { return is_mouse_locked(get_primary_window()); } : nullptr, menubar);
 
-    mods::install_zoom();
+    mods::install();
 
     add_window_creation_callback(nullptr, on_window_created);
     add_swap_buffers_callback(nullptr, [](void*, EGLDisplay display, EGLSurface surface) { menu::frame(display, surface); });

@@ -14,20 +14,17 @@ FetchContent_Declare(imgui
         GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(imgui)
 
+# src/core is what every mod shares; each mod is one file in src/mods, picked up here
+file(GLOB TALAZ_SOURCES CONFIGURE_DEPENDS src/core/*.cpp src/mods/*.cpp)
 add_library(talaz_bedrock SHARED
-        src/main.cpp
-        src/menu.cpp
-        src/mods.cpp
-        src/title.cpp
-        src/config.cpp
-        src/gl.cpp
+        ${TALAZ_SOURCES}
         ${imgui_SOURCE_DIR}/imgui.cpp
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
         ${imgui_SOURCE_DIR}/imgui_tables.cpp
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
 
-target_include_directories(talaz_bedrock PRIVATE ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+target_include_directories(talaz_bedrock PRIVATE src src/core ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 # The game ships its own libc++_shared, so keep ours static and our symbols private
 # The name the in-game menu shows
 set(CLIENT_NAME "Talaz" CACHE STRING "Name the in-game menu shows")
@@ -43,5 +40,5 @@ target_link_options(talaz_bedrock PRIVATE
         -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports.map
         -Wl,--pack-dyn-relocs=none)
 set_source_files_properties(${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp PROPERTIES
-        COMPILE_OPTIONS "-include;${CMAKE_CURRENT_SOURCE_DIR}/src/gl.h")
+        COMPILE_OPTIONS "-include;${CMAKE_CURRENT_SOURCE_DIR}/src/core/gl.h")
 target_link_libraries(talaz_bedrock PRIVATE EGL log)

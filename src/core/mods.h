@@ -41,9 +41,9 @@ std::string option_text(const char* id);
 // Declares every mod setting with config
 void declare();
 
-// Finds the game's camera so Zoom can change the field of view. Needs the
-// game library loaded, so it runs from mod_init.
-void install_zoom();
+// Installs every mod's hooks into the game. Needs the game library loaded, so it
+// runs from mod_init.
+void install();
 // Holds the frame back when FPS Limit is on. Called once per frame.
 void limit_fps();
 
@@ -63,9 +63,8 @@ void riptide(void* window);
 // Called once per frame, before drawing
 void tick(float dt);
 bool hud_visible();
-// Night Vision and Motion Blur, drawn over the finished picture
+// Whether the world pass's mods are on, which need the GL functions loaded
 bool effects_visible();
-void draw_effects(ImDrawList* dl);
 // u is the size of one design pixel, the design being drawn for a 720p screen
 void draw_hud(ImDrawList* dl, float u, ImFont* font);
 
