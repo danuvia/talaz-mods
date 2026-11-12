@@ -1,6 +1,6 @@
 // The HUDs: FPS, CPS, Clock, Session and Keystrokes, and what they count.
 
-#include <android/log.h>
+#include "log.h"
 
 #include <algorithm>
 #include <cmath>
@@ -48,7 +48,7 @@ void huds_tick(float dt) {
         static const bool ab = std::getenv("TALAZ_AB") != nullptr;
         static int seconds = 0;
         if (bench)
-            __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "bench fps %d ab %d", fps, ab_test ? 1 : 0);
+            log_info("bench fps %d ab %d", fps, ab_test ? 1 : 0);
         if (ab && ++seconds % 3 == 0)
             ab_test = !ab_test;
         frames = 0;
@@ -95,7 +95,11 @@ void huds_draw(ImDrawList* dl, float u, ImFont* font) {
     if (enabled("clock")) {
         time_t now = time(nullptr);
         tm parts{};
+#ifdef _WIN32
+        localtime_s(&parts, &now);
+#else
         localtime_r(&now, &parts);
+#endif
         if (config::get("clock.24h") != 0)
             std::snprintf(buf, sizeof buf, "%02d:%02d", parts.tm_hour, parts.tm_min);
         else

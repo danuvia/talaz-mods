@@ -2,12 +2,12 @@
 // asks "has night vision?" before asking "how much?" hears yes, and "how much" hears
 // full. It looks the same as the potion, leaves the HUD alone and does not stack with it.
 
-#include <android/log.h>
+#include "log.h"
 
 #include <cstring>
 #include <utility>
 
-#include "shared.h"
+#include "hooks.h"
 
 namespace mods {
 namespace {
@@ -27,7 +27,7 @@ void set_night_vision(bool on) {
         uint32_t yes = 0x52800020;  // mov w0, #1
         patch_code(at, on ? &yes : &original, sizeof yes);
     }
-    __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "Night Vision %s at %p: %08x %08x", on ? "on" : "off", night_vision_scale, night_vision_scale[0], night_vision_scale[1]);
+    log_info("Night Vision %s at %p: %08x %08x", on ? "on" : "off", night_vision_scale, night_vision_scale[0], night_vision_scale[1]);
     now = on;
 }
 
@@ -68,12 +68,12 @@ void nightvision_install(const std::vector<Segment>& segs, Patch patch) {
                         break;
                     }
             }
-            __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "Night Vision found %zu checks", night_vision_checks.size());
+            log_info("Night Vision found %zu checks", night_vision_checks.size());
             patch_code = patch;
             return;
         }
     }
-    __android_log_print(ANDROID_LOG_ERROR, CLIENT_NAME, "Night Vision couldn't find the game's night vision");
+    log_error("Night Vision couldn't find the game's night vision");
 }
 
 void nightvision_tick() {

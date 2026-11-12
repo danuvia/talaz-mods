@@ -8,7 +8,7 @@
 #include <cmath>
 
 #include "config.h"
-#include "shared.h"
+#include "hooks.h"
 
 namespace mods {
 namespace {

@@ -1,14 +1,14 @@
 // The game's library: finding things in it, hooking its imports, and installing
 // every mod's hooks once it is loaded. Also what the core fixes in the game itself.
 
-#include <android/log.h>
+#include "log.h"
 #include <dlfcn.h>
 #include <link.h>
 
 #include <cstring>
 
 #include "mods.h"
-#include "shared.h"
+#include "hooks.h"
 
 namespace mods {
 
@@ -133,7 +133,7 @@ void fix_unreadable_image(std::byte* base, Patch patch) {
     uint32_t high = 0x72a00002 | (len >> 16) << 5;
     patch(at, code, sizeof code);
     patch(at + 5, &high, sizeof high);
-    __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "Pointed the unreadable built-in image at a blank one");
+    log_info("Pointed the unreadable built-in image at a blank one");
 }
 
 // The game's "hide paper doll" setting, caught as the game registers it: the
@@ -148,7 +148,7 @@ void* register_option_hook(void* options, void* option) {
     void* registered = real_register_option(options, option);
     if (reinterpret_cast<uintptr_t>(__builtin_return_address(0)) == paper_doll_call)
         hide_paper_doll = static_cast<const unsigned char*>(registered) + 0x10,
-        __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "Found the paper doll setting");
+        log_info("Found the paper doll setting");
     return registered;
 }
 

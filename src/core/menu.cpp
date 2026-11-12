@@ -10,9 +10,7 @@
 
 #include "assets.h"
 #include "config.h"
-#include "gl.h"
 #include "imgui.h"
-#include "imgui_impl_opengl3.h"
 #include "mods.h"
 #include "theme.h"
 #include "title.h"
@@ -45,6 +43,7 @@ const mods::Setting* dragging = nullptr;
 std::atomic<mods::Mod*> page{nullptr};
 bool (*mouse_locked)() = nullptr;
 const int* menubar_height = nullptr;
+Renderer backend{};
 
 // A world is being played with no screen over it, the game holding the mouse
 bool playing() { return !mouse_locked || mouse_locked(); }
@@ -53,13 +52,16 @@ bool playing() { return !mouse_locked || mouse_locked(); }
 float window_y(double y) { return float(y) - (menubar_height ? float(*menubar_height) : 0.f); }
 
 bool init() {
-    if (!gl::load())
+    if (!backend.init)
         return false;
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    ImGui_ImplOpenGL3_Init("#version 300 es");
+    if (!backend.init()) {
+        ImGui::DestroyContext();
+        return false;
+    }
     ready = true;
     return true;
 }
@@ -73,8 +75,7 @@ void load_fonts() {
     io.Fonts->AddFontFromMemoryTTF((void*)font.data, int(font.size), 24 * scale, &config);
     // the title screen's wordmark, drawn large, gets a size of its own so it stays sharp
     io.Fonts->AddFontFromMemoryTTF((void*)font.data, int(font.size), 108 * scale, &config);
-    ImGui_ImplOpenGL3_DestroyFontsTexture();
-    ImGui_ImplOpenGL3_CreateFontsTexture();
+    backend.rebuild_fonts();
 }
 
 using namespace theme;
@@ -375,13 +376,15 @@ bool scroll(double dx, double dy) {
     return wanted;
 }
 
-void frame(EGLDisplay display, EGLSurface surface) {
+void set_renderer(const Renderer& r) { backend = r; }
+const Renderer& renderer() { return backend; }
+
+void frame(int w, int h) {
     auto now = std::chrono::steady_clock::now();
     float dt = last_frame.time_since_epoch().count() ? std::chrono::duration<float>(now - last_frame).count() : 1 / 60.f;
     dt = std::clamp(dt, 1 / 1000.f, 0.25f);
     last_frame = now;
     mods::tick(dt);
-    mods::riptide(surface);
     step_water(dt);
     mods::limit_fps();
     // the HUDs show over a world being played, not over the game's screens; off a
@@ -390,9 +393,6 @@ void frame(EGLDisplay display, EGLSurface surface) {
     if (!wanted && !hud && playing())
         return;
 
-    EGLint w = 0, h = 0;
-    eglQuerySurface(display, surface, EGL_WIDTH, &w);
-    eglQuerySurface(display, surface, EGL_HEIGHT, &h);
     if (w <= 0 || h <= 0)
         return;
     width = float(w);
@@ -419,7 +419,7 @@ void frame(EGLDisplay display, EGLSurface surface) {
     io.DeltaTime = dt;
     io.MouseDrawCursor = relative_mouse && wanted;
 
-    ImGui_ImplOpenGL3_NewFrame();
+    backend.new_frame();
     ImGui::NewFrame();
     if (on_title && !wanted && title::draw(ImGui::GetBackgroundDrawList(), size, ImVec2(cursor_x, cursor_y), title_click.exchange(false), float(ImGui::GetTime())))
         wanted = true;
@@ -428,7 +428,7 @@ void frame(EGLDisplay display, EGLSurface surface) {
     else if (playing())
         mods::draw_hud(ImGui::GetForegroundDrawList(), scale * 1.5f, ImGui::GetFont());
     ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    backend.render(ImGui::GetDrawData());
 }
 
 }  // namespace menu

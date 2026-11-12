@@ -5,6 +5,8 @@
 
 #include "menu.h"
 #include "config.h"
+#include "gl.h"
+#include "imgui_impl_opengl3.h"
 #include "mods.h"
 
 namespace {
@@ -19,6 +21,22 @@ void (*add_mouse_button_callback)(GameWindow*, void* user, bool (*cb)(void* user
 void (*add_mouse_position_callback)(GameWindow*, void* user, bool (*cb)(void* user, double x, double y, bool relative));
 bool (*is_mouse_locked)(GameWindow*);
 void (*add_mouse_scroll_callback)(GameWindow*, void* user, bool (*cb)(void* user, double x, double y, double dx, double dy));
+
+// the menu draws with GL here
+const menu::Renderer gl_renderer{
+        [] { return gl::load() && ImGui_ImplOpenGL3_Init("#version 300 es"); },
+        [] { ImGui_ImplOpenGL3_NewFrame(); },
+        [](ImDrawData* data) { ImGui_ImplOpenGL3_RenderDrawData(data); },
+        [] {
+            ImGui_ImplOpenGL3_DestroyFontsTexture();
+            ImGui_ImplOpenGL3_CreateFontsTexture();
+        },
+        [](float x, float y, uint8_t rgba[4]) {
+            GLint vp[4] = {};
+            glGetIntegerv(GL_VIEWPORT, vp);
+            glReadPixels(vp[0] + int(x * vp[2]) + 1, vp[1] + int((1 - y) * vp[3]) - 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+        },
+};
 
 template <typename T>
 void load(void* lib, T& fn, const char* name) {
@@ -84,5 +102,12 @@ extern "C" [[gnu::visibility("default")]] void mod_init() {
     mods::install();
 
     add_window_creation_callback(nullptr, on_window_created);
-    add_swap_buffers_callback(nullptr, [](void*, EGLDisplay display, EGLSurface surface) { menu::frame(display, surface); });
+    menu::set_renderer(gl_renderer);
+    add_swap_buffers_callback(nullptr, [](void*, EGLDisplay display, EGLSurface surface) {
+        mods::riptide(surface);
+        EGLint w = 0, h = 0;
+        eglQuerySurface(display, surface, EGL_WIDTH, &w);
+        eglQuerySurface(display, surface, EGL_HEIGHT, &h);
+        menu::frame(w, h);
+    });
 }

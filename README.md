@@ -6,7 +6,7 @@ The mods of [Talaz](https://github.com/danuvia/talaz), a Minecraft Bedrock clien
 
 `src/mods.def` lists every mod and its settings once. The game menu builds its tiles and pages from it, and the launcher reads it for its Mods page.
 
-`src/mods/` has one file per mod. `src/core/` holds what they share: the menu, the title screen, the settings file, the tools for finding and hooking things in the game, the world pass the visual mods draw in, and the input the mods watch.
+`src/core/` and `src/mods/` are the same on every platform: the menu, the title screen, the settings file, the HUDs and the input the mods watch. `src/android/` hooks the Android game through mcpelauncher, and holds the mods that reach into the game there, like Zoom, Night Vision and the world pass the visual mods draw in. `src/windows/` hooks the Windows game: it draws the menu over Direct3D and reads the game window's input. The mods that reach into the game don't work on Windows yet.
 
 `pack/` is the resource pack the launcher puts in the game folder for the title screen.
 
@@ -25,6 +25,18 @@ cmake --build build/arm64 -j8
 ```
 
 On Linux use `-DANDROID_ABI=x86_64` and `build/x86_64`. The launcher carries the library inside itself.
+
+The Windows DLL builds with mingw-w64, on a Mac or Linux too:
+
+```bash
+cmake -S . -B build/windows -DCMAKE_TOOLCHAIN_FILE=cmake/mingw.cmake -DCMAKE_BUILD_TYPE=Release
+```
+
+```bash
+cmake --build build/windows -j8
+```
+
+That makes `libtalaz_bedrock.dll` and `talaz-inject.exe`, which loads the DLL into a running Minecraft until the launcher does it on Windows.
 
 A few variables in the game's environment help while working on the mods. `TALAZ_PREVIEW=1` opens the menu at startup and `TALAZ_PREVIEW=zoom` opens a mod's page. `TALAZ_BENCH=1` logs the frame rate every second, and `TALAZ_BENCH_ONLY=fps,riptide` runs only those mods. `TALAZ_AB=1` turns the new parts of Riptide off for 3 seconds out of every 6, so one run compares both.
 

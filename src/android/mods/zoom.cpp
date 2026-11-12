@@ -1,7 +1,7 @@
 // Zoom: hold C to zoom in, scroll while holding to zoom further. The camera's
 // tryGetFOV is found through CameraAPI's vtable and answered with a narrower field.
 
-#include <android/log.h>
+#include "log.h"
 
 #include <algorithm>
 #include <cmath>
@@ -9,7 +9,7 @@
 #include <optional>
 
 #include "config.h"
-#include "shared.h"
+#include "hooks.h"
 
 namespace mods {
 
@@ -52,7 +52,7 @@ std::optional<float> zoomed_fov(void* camera) {
         return fov;
     if (!fov || !(*fov > 1 && *fov < 179)) {
         if (fov && ++implausible == GIVE_UP_AFTER)
-            __android_log_print(ANDROID_LOG_ERROR, CLIENT_NAME, "Zoom turned itself off, this game version moved the camera's field of view");
+            log_error("Zoom turned itself off, this game version moved the camera's field of view");
         return fov;
     }
     implausible = 0;
@@ -82,7 +82,7 @@ void zoom_install(const std::vector<Segment>& segs, Patch patch, int major, int 
     bool newer = major > 1 || minor > 21 || (minor == 21 && patch_version >= 130);
     void** slot = vtable + (newer ? 7 : 6);
     if (!in_code(segs, *slot)) {
-        __android_log_print(ANDROID_LOG_ERROR, CLIENT_NAME, "Zoom couldn't find the camera on %d.%d.%d", major, minor, patch_version);
+        log_error("Zoom couldn't find the camera on %d.%d.%d", major, minor, patch_version);
         return;
     }
     camera_vtable = vtable;

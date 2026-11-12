@@ -3,7 +3,7 @@
 // the world (Camera Sway, then Motion Blur) work on the finished picture, so the
 // hand and the HUDs stay sharp. The game's GL state is put back afterwards.
 
-#include <android/log.h>
+#include "log.h"
 
 #include <atomic>
 #include <tuple>
@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "mods.h"
-#include "shared.h"
+#include "hooks.h"
 
 namespace mods {
 
@@ -135,7 +135,7 @@ void clear_hook(GLbitfield bits) {
 void world_install(Patch patch) {
     real_clear = reinterpret_cast<decltype(real_clear)>(hook_import("glClear", (void*)clear_hook, patch));
     if (!real_clear)
-        __android_log_print(ANDROID_LOG_ERROR, CLIENT_NAME, "The world pass couldn't find the game's glClear");
+        log_error("The world pass couldn't find the game's glClear");
 }
 
 // a new frame may pass again

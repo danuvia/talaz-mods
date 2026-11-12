@@ -1,7 +1,11 @@
 #include "config.h"
 
 #include <dirent.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 #include <algorithm>
 #include <cstdio>
@@ -19,14 +23,24 @@ bool global(const std::string& key) {
     return key.rfind("pref.", 0) == 0 || key.rfind("theme.", 0) == 0 || key.rfind("key.", 0) == 0;
 }
 
-// <dir>/libtalaz_bedrock.so keeps its files beside it:
+// <dir>/libtalaz_bedrock.so (or .dll) keeps its files beside it:
 // libtalaz_bedrock.ini and libtalaz_bedrock.profile.<name>.ini
 std::string base() {
+#ifdef _WIN32
+    HMODULE self = nullptr;
+    char name[MAX_PATH];
+    if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(&base), &self) ||
+        !GetModuleFileNameA(self, name, MAX_PATH))
+        return {};
+    std::string path = name;
+    size_t dot = path.rfind(".dll");
+#else
     Dl_info info{};
     if (!dladdr(reinterpret_cast<void*>(&base), &info) || !info.dli_fname)
         return {};
     std::string path = info.dli_fname;
     size_t dot = path.rfind(".so");
+#endif
     return dot == std::string::npos ? path : path.substr(0, dot);
 }
 

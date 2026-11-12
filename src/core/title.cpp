@@ -1,13 +1,13 @@
 #include "title.h"
 
-#include <android/log.h>
+#include "log.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstring>
 
-#include "gl.h"
+#include "menu.h"
 #include "theme.h"
 
 namespace title {
@@ -162,13 +162,11 @@ void sea(ImDrawList* dl, ImVec2 d, float time) {
 }  // namespace
 
 bool showing() {
-    GLint vp[4] = {};
-    glGetIntegerv(GL_VIEWPORT, vp);
     // the pack's marks sit under buttons drawn solid: 1, 254, 3 inside Play on Talaz's screen,
     // 3, 1, 254 inside the way back on the game's own. A dialog over the middle covers Play's
     auto at = [&](float x, float y) {
-        unsigned char px[4] = {};
-        glReadPixels(vp[0] + int(x * vp[2]) + 1, vp[1] + int((1 - y) * vp[3]) - 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, px);
+        uint8_t px[4] = {};
+        menu::renderer().read_pixel(x, y, px);
         return std::array<int, 3>{px[0], px[1], px[2]};
     };
     auto ours = at(0.2f, 0.51f), theirs = at(0.96f, 0.06f);
@@ -176,7 +174,7 @@ bool showing() {
     bool shown = vanilla || (ours[0] < 12 && ours[1] > 240 && ours[2] < 14);
     static int last = -1;
     if (int now = vanilla ? 2 : shown; now != last)
-        __android_log_print(ANDROID_LOG_INFO, "Talaz", "Title screen: %s", now == 2 ? "the game's" : now ? "Talaz's" : "gone"), last = now;
+        log_info("Title screen: %s", now == 2 ? "the game's" : now ? "Talaz's" : "gone"), last = now;
     return shown;
 }
 

@@ -5,7 +5,7 @@
 // GLFWGameWindow::setSwapInterval. It also cuts two kinds of wasted work in the
 // game itself, below: GPU timing queries, and threads spinning on their waits.
 
-#include <android/log.h>
+#include "log.h"
 
 #include <pthread.h>
 #include <time.h>
@@ -13,7 +13,7 @@
 #include <cstring>
 
 #include "mods.h"
-#include "shared.h"
+#include "hooks.h"
 
 namespace mods {
 namespace {
@@ -92,7 +92,7 @@ void riptide_install(Patch patch) {
     real_timedwait = reinterpret_cast<decltype(real_timedwait)>(hook_import("pthread_cond_timedwait", reinterpret_cast<void*>(&timedwait), patch));
     real_get_proc = reinterpret_cast<decltype(real_get_proc)>(hook_import("eglGetProcAddress", reinterpret_cast<void*>(&get_proc), patch));
     if (!real_get_proc)
-        __android_log_print(ANDROID_LOG_ERROR, CLIENT_NAME, "Riptide couldn't find eglGetProcAddress");
+        log_error("Riptide couldn't find eglGetProcAddress");
 }
 
 void set_swap_interval_function(void* function) {
@@ -107,7 +107,7 @@ void riptide_apply(void* window) {
         return;
     set_swap_interval(window, want);
     applied = want;
-    __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "Riptide %s", want ? "off" : "on");
+    log_info("Riptide %s", want ? "off" : "on");
 }
 
 }  // namespace mods
