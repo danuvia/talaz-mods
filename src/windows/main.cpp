@@ -11,6 +11,7 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <string>
@@ -47,6 +48,8 @@ struct {
 
 HWND window = nullptr;
 WNDPROC real_wndproc = nullptr;
+// the buffer this frame draws into, for the title screen's pixel
+ID3D11Resource* frame_buffer = nullptr;
 
 template <typename T>
 void release(T*& p) {
@@ -119,6 +122,49 @@ bool make_device(IDXGISwapChain* chain) {
     return true;
 }
 
+// One pixel of the frame, through a 1x1 staging copy the CPU can read. It waits for
+// the GPU, which only happens off a world, where the title screen is looked for
+void read_pixel(float x, float y, uint8_t rgba[4]) {
+    rgba[0] = rgba[1] = rgba[2] = rgba[3] = 0;
+    static ID3D11Texture2D* staging = nullptr;
+    static DXGI_FORMAT staging_format = DXGI_FORMAT_UNKNOWN;
+    ID3D11Texture2D* frame = nullptr;
+    if (!frame_buffer || FAILED(frame_buffer->QueryInterface(IID_PPV_ARGS(&frame))))
+        return;
+    D3D11_TEXTURE2D_DESC desc{};
+    frame->GetDesc(&desc);
+    bool bgra = desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM || desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    bool rgba8 = desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM || desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    if (!bgra && !rgba8) {
+        frame->Release();
+        return;
+    }
+    if (staging && staging_format != desc.Format)
+        release(staging);
+    if (!staging) {
+        D3D11_TEXTURE2D_DESC sd{1, 1, 1, 1, desc.Format, {1, 0}, D3D11_USAGE_STAGING, 0, D3D11_CPU_ACCESS_READ, 0};
+        if (FAILED(gfx.device->CreateTexture2D(&sd, nullptr, &staging))) {
+            frame->Release();
+            return;
+        }
+        staging_format = desc.Format;
+    }
+    // the same nudge as on Android, into the mark rather than its edge
+    UINT px = std::min(UINT(x * desc.Width) + 1, desc.Width - 1), py = std::min(UINT(y * desc.Height) + 2, desc.Height - 1);
+    D3D11_BOX box{px, py, 0, px + 1, py + 1, 1};
+    gfx.context->CopySubresourceRegion(staging, 0, 0, 0, 0, frame, 0, &box);
+    frame->Release();
+    D3D11_MAPPED_SUBRESOURCE mapped{};
+    if (SUCCEEDED(gfx.context->Map(staging, 0, D3D11_MAP_READ, 0, &mapped))) {
+        auto* p = static_cast<const uint8_t*>(mapped.pData);
+        rgba[0] = p[bgra ? 2 : 0];
+        rgba[1] = p[1];
+        rgba[2] = p[bgra ? 0 : 2];
+        rgba[3] = p[3];
+        gfx.context->Unmap(staging, 0);
+    }
+}
+
 const menu::Renderer dx11_renderer{
         [] { return ImGui_ImplDX11_Init(gfx.device, gfx.context); },
         [] { ImGui_ImplDX11_NewFrame(); },
@@ -127,8 +173,7 @@ const menu::Renderer dx11_renderer{
             ImGui_ImplDX11_InvalidateDeviceObjects();
             ImGui_ImplDX11_CreateDeviceObjects();
         },
-        // ponytail: no title screen on Windows yet, so the pack's mark is never looked for
-        [](float, float, uint8_t rgba[4]) { rgba[0] = rgba[1] = rgba[2] = rgba[3] = 0; },
+        read_pixel,
 };
 
 HRESULT STDMETHODCALLTYPE present(IDXGISwapChain* chain, UINT sync, UINT flags) {
@@ -150,7 +195,9 @@ HRESULT STDMETHODCALLTYPE present(IDXGISwapChain* chain, UINT sync, UINT flags) 
             gfx.context->OMSetRenderTargets(1, &gfx.targets[index], nullptr);
             DXGI_SWAP_CHAIN_DESC desc{};
             chain->GetDesc(&desc);
+            frame_buffer = gfx.buffers[index];
             menu::frame(int(desc.BufferDesc.Width), int(desc.BufferDesc.Height));
+            frame_buffer = nullptr;
             if (gfx.d3d12)
                 gfx.on12->ReleaseWrappedResources(&gfx.buffers[index], 1);
             gfx.context->Flush();
