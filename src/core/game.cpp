@@ -185,6 +185,7 @@ void install() {
         watch_paper_doll(segs.front().begin, patch);
     }
     world_install(patch);
+    riptide_install(patch);
     nightvision_install(segs, patch);
     zoom_install(segs, patch, *major, *minor, *patch_v);
 }

@@ -35,6 +35,8 @@ void huds_click(int index) {
     clicks[index].push_back(Clock::now());
 }
 
+bool ab_test = false;
+
 void huds_tick(float dt) {
     frames++;
     fps_window += dt;
@@ -42,8 +44,13 @@ void huds_tick(float dt) {
         fps = int(std::lround(frames / fps_window));
         // TALAZ_BENCH=1 logs the frame rate every second, for comparing settings
         static const bool bench = std::getenv("TALAZ_BENCH") != nullptr;
+        // TALAZ_AB=1 also flips ab_test every 3 seconds, so an optimisation can be compared within one run
+        static const bool ab = std::getenv("TALAZ_AB") != nullptr;
+        static int seconds = 0;
         if (bench)
-            __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "bench fps %d", fps);
+            __android_log_print(ANDROID_LOG_INFO, CLIENT_NAME, "bench fps %d ab %d", fps, ab_test ? 1 : 0);
+        if (ab && ++seconds % 3 == 0)
+            ab_test = !ab_test;
         frames = 0;
         fps_window = 0;
     }

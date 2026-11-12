@@ -26,7 +26,7 @@ cmake --build build/arm64 -j8
 
 On Linux use `-DANDROID_ABI=x86_64` and `build/x86_64`. The launcher carries the library inside itself.
 
-A few variables in the game's environment help while working on the mods. `TALAZ_PREVIEW=1` opens the menu at startup and `TALAZ_PREVIEW=zoom` opens a mod's page. `TALAZ_BENCH=1` logs the frame rate every second, and `TALAZ_BENCH_ONLY=fps,riptide` runs only those mods.
+A few variables in the game's environment help while working on the mods. `TALAZ_PREVIEW=1` opens the menu at startup and `TALAZ_PREVIEW=zoom` opens a mod's page. `TALAZ_BENCH=1` logs the frame rate every second, and `TALAZ_BENCH_ONLY=fps,riptide` runs only those mods. `TALAZ_AB=1` turns the new parts of Riptide off for 3 seconds out of every 6, so one run compares both.
 
 ## License
 

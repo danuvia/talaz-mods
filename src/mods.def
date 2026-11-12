@@ -16,7 +16,7 @@ MOD(fpslimit, "FPS Limit", "Caps the frame rate to keep the computer cool and qu
 MOD(togglesprint, "Toggle Sprint", "Press Ctrl once to keep sprinting", 0)
 MOD(nightvision, "Night Vision", "Brightens the picture so caves and nights are easy to see", 0)
 MOD(motionblur, "Motion Blur", "Smears the world the way the camera turns", 0)
-MOD(riptide, "Riptide", "Breaks the launcher's hidden frame cap, for about three times the frame rate", 1)
+MOD(riptide, "Riptide", "Breaks the launcher's hidden frame cap and cuts wasted work in the game", 1)
 MOD(camerasway, "Camera Sway", "Tilts the camera as you strafe and kicks it up on a jump", 0)
 
 SLIDER(zoom, "Zoom", "zoom.factor", "×", 1.5, 10, 0.5, 4)
