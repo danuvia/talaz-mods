@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <optional>
 
 #include "config.h"
@@ -13,6 +14,7 @@
 namespace mods {
 
 float last_fov = 70;
+float player_rise = 0;
 
 namespace {
 
@@ -26,7 +28,25 @@ std::optional<float> (*try_get_fov)(void*) = nullptr;
 std::atomic<int> implausible{0};
 constexpr int GIVE_UP_AFTER = 120;
 
+void** camera_vtable = nullptr;
+
+// the player's height this tick and last, read here because the camera asks for its
+// field of view once a frame on the render thread, while the player is alive
+// ponytail: LocalPlayer's position at +0x540 and the previous one at +0x54c, found on 1.21.1xx; a version that moves them makes the jump tilt read junk, scan for them if that happens
+void read_player(void* camera) {
+    void* client = *reinterpret_cast<void**>(static_cast<char*>(camera) + 8);
+    if (!client)
+        return;
+    auto get_player = reinterpret_cast<void* (*)(void*)>((*reinterpret_cast<void***>(client))[32]);
+    auto* player = static_cast<char*>(get_player(client));
+    if (!player)
+        return;
+    float y = *reinterpret_cast<float*>(player + 0x544), prev = *reinterpret_cast<float*>(player + 0x550);
+    player_rise = std::isfinite(y) && std::isfinite(prev) ? y - prev : 0;
+}
+
 std::optional<float> zoomed_fov(void* camera) {
+    read_player(camera);
     std::optional<float> fov = try_get_fov(camera);
     if (implausible >= GIVE_UP_AFTER)
         return fov;
@@ -65,6 +85,7 @@ void zoom_install(const std::vector<Segment>& segs, Patch patch, int major, int 
         __android_log_print(ANDROID_LOG_ERROR, CLIENT_NAME, "Zoom couldn't find the camera on %d.%d.%d", major, minor, patch_version);
         return;
     }
+    camera_vtable = vtable;
     try_get_fov = reinterpret_cast<decltype(try_get_fov)>(*slot);
     void* hook = reinterpret_cast<void*>(&zoomed_fov);
     patch(slot, &hook, sizeof hook);

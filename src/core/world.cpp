@@ -6,7 +6,9 @@
 #include <android/log.h>
 
 #include <atomic>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 #include "mods.h"
 #include "shared.h"
@@ -39,6 +41,26 @@ GLuint frame_texture(GLint filter) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     return texture;
+}
+
+// copies the screen into a texture made by frame_texture, allocating it only when the
+// size changes: glCopyTexImage2D every frame made the driver allocate a new screen sized
+// texture each time
+void copy_frame(GLuint texture, GLint vp[4]) {
+    static std::vector<std::tuple<GLuint, GLint, GLint>> sizes;
+    glBindTexture(GL_TEXTURE_2D, texture);
+    for (auto& [t, w, h] : sizes)
+        if (t == texture) {
+            if (w == vp[2] && h == vp[3]) {
+                glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vp[0], vp[1], vp[2], vp[3]);
+                return;
+            }
+            w = vp[2], h = vp[3];
+            glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, vp[0], vp[1], vp[2], vp[3], 0);
+            return;
+        }
+    sizes.emplace_back(texture, vp[2], vp[3]);
+    glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, vp[0], vp[1], vp[2], vp[3], 0);
 }
 
 namespace {

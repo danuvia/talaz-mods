@@ -53,6 +53,8 @@ void zoom_install(const std::vector<Segment>& segs, Patch patch, int major, int 
 void zoom_tick(float dt);
 bool zoom_scroll(double dy, bool playing);
 void zoom_key(int key, bool down, bool playing);
+extern bool ab_test;  // flipped by TALAZ_AB for comparisons
+extern float player_rise;  // blocks the player rose in the last game tick
 extern float last_fov;  // the field of view the world was last drawn with
 
 // nightvision.cpp
@@ -67,6 +69,7 @@ void fpslimit_wait();
 
 // riptide.cpp
 void riptide_apply(void* window);
+void riptide_install(Patch patch);
 
 // The world pass (core/world.cpp) runs at the game's depth clear, between the world
 // and the hand: each of these turns the finished world, in that order
@@ -90,6 +93,7 @@ bool paper_doll();
 
 // One triangle over the whole screen, drawn with a program of the caller's fragment shader
 GLuint fullscreen_program(const char* fragment);
+void copy_frame(GLuint texture, GLint vp[4]);
 GLuint frame_texture(GLint filter);
 
 }  // namespace mods

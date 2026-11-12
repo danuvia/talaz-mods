@@ -30,8 +30,7 @@ void camera_blur(GLint vp[4]) {
         glGenVertexArrays(1, &vao);
         frame = frame_texture(GL_LINEAR);
     }
-    glBindTexture(GL_TEXTURE_2D, frame);
-    glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, vp[0], vp[1], vp[2], vp[3], 0);
+    copy_frame(frame, vp);
     glDisable(GL_BLEND);
     glUseProgram(program);
     glUniform1i(glGetUniformLocation(program, "frame"), 0);
@@ -64,7 +63,7 @@ void trail(GLint vp[4]) {
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
-    glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, vp[0], vp[1], vp[2], vp[3], 0);
+    copy_frame(last, vp);
     last_w = vp[2];
     last_h = vp[3];
 }
