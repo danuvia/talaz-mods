@@ -1,6 +1,5 @@
-// Motion Blur, in the world pass. Following the camera (PolyBlur's Unity mode) the
-// world is smeared along the way the camera turns and is sharp when it holds still;
-// otherwise each frame keeps some of the last one, a trail (PolyBlur's Phosphor).
+// Motion Blur's drawing on Android, in the world pass. How much to blur is worked out
+// in mods/motionblur.cpp
 
 #include <algorithm>
 #include <cmath>
@@ -11,15 +10,10 @@
 namespace mods {
 namespace {
 
-float blur_keep = 0;  // how much of the last frame stays, set each frame from the amount and frame time
-
-// ponytail: the turn comes from mouse motion, so turning with a controller isn't blurred. Read the camera's angles once the mod finds them
 void camera_blur(GLint vp[4]) {
     static GLuint program = 0, vao = 0, frame = 0;
-    // ponytail: mouse counts to screen pixels is a guess (twice), tune once the camera angles are read
-    float amount = 2 * std::clamp(config::get("motionblur.amount") / 100, 0.f, 1.f);
-    float dx = look_vx * amount / vp[2], dy = -look_vy * amount / vp[3];
-    if (std::abs(dx * vp[2]) + std::abs(dy * vp[3]) < 0.5f)
+    float dx, dy;
+    if (!motionblur_step(vp[2], vp[3], dx, dy))
         return;
     if (!program) {
         program = fullscreen_program(
@@ -59,7 +53,7 @@ void trail(GLint vp[4]) {
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
         glUseProgram(program);
         glUniform1i(glGetUniformLocation(program, "last"), 0);
-        glUniform1f(glGetUniformLocation(program, "keep"), blur_keep);
+        glUniform1f(glGetUniformLocation(program, "keep"), motionblur_keep());
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
@@ -69,16 +63,6 @@ void trail(GLint vp[4]) {
 }
 
 }  // namespace
-
-void motionblur_tick(float dt) {
-    // the last frame keeps amount of itself per 60th of a second, like the Java mods,
-    // so the trail is as long at 200 fps as at 60
-    blur_keep = enabled("motionblur") ? std::pow(std::clamp(config::get("motionblur.amount") / 100, 0.f, 0.95f), dt * 60) : 0;
-}
-
-bool motionblur_active() {
-    return blur_keep > 0;
-}
 
 void motionblur_world(GLint vp[4]) {
     if (config::get("motionblur.camera") != 0)

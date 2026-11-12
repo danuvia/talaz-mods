@@ -16,9 +16,5 @@ bool zoom_scroll(double, bool) { return false; }
 void zoom_key(int, bool, bool) {}
 void nightvision_tick() {}
 void riptide_apply(void*) {}
-void camerasway_tick(float, bool) {}
-bool camerasway_active() { return false; }
-void motionblur_tick(float) {}
-bool motionblur_active() { return false; }
 
 }  // namespace mods

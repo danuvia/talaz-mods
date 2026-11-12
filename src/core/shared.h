@@ -55,8 +55,12 @@ void riptide_apply(void* window);
 // and the hand: each of these turns the finished world, in that order
 void camerasway_tick(float dt, bool jumped);
 bool camerasway_active();
+float camerasway_roll();   // degrees
+float camerasway_pitch();  // degrees, up is positive
 void motionblur_tick(float dt);
 bool motionblur_active();
+float motionblur_keep();
+bool motionblur_step(int width, int height, float& dx, float& dy);
 void world_new_frame();
 
 // huds.cpp: the counters and the drawing of every HUD
