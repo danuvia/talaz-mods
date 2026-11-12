@@ -33,17 +33,30 @@ void set_night_vision(bool on) {
 
 }  // namespace
 
-// found by the formula's 0.2 pi constant: mov w8, #0xd97c; movk w8, #0x3f20, lsl #16
-// ponytail: the start sits 0xd4 before it on 1.21.114.1. Scan back for the prologue if other versions move it
+// found by the formula's constants in any register: 0.2 pi (mov #0xd97c; movk #0x3f20,
+// lsl #16), then 0.3 and 0.7 (movk #0x3e99 and #0x3f33) right after it. The function
+// starts at the closest sub sp before them, 0xd4 back on 1.21.114.1
+// ponytail: 1.26 builds the formula another way and Night Vision logs that it found nothing there
 void nightvision_install(const std::vector<Segment>& segs, Patch patch) {
+    auto has = [](const uint32_t* w, uint32_t op) {
+        for (int k = 0; k < 16; k++)
+            if ((w[k] & ~31u) == op)
+                return true;
+        return false;
+    };
     for (const Segment& seg : segs) {
         if (!seg.exec)
             continue;
         auto* w = reinterpret_cast<uint32_t*>(seg.begin);
-        for (size_t i = 0x40, n = seg.size / 4 - 1; i < n; i++) {
-            if (w[i] != 0x529B2F88 || w[i + 1] != 0x72A7E408 || w[i - 0xd4 / 4] != 0xD10143FF)
+        for (size_t i = 0x80, n = seg.size / 4 - 16; i < n; i++) {
+            if ((w[i] & ~31u) != 0x529B2F80 || !has(w + i, 0x72A7E400) || !has(w + i, 0x72A7D320) || !has(w + i, 0x72A7E660))
                 continue;
-            night_vision_scale = w + i - 0xd4 / 4;
+            size_t start = i;
+            while (start > i - 0x80 && (w[start] & 0xFF8003FF) != 0xD10003FF)  // sub sp, sp, #n
+                start--;
+            if (start == i - 0x80)
+                continue;
+            night_vision_scale = w + start;
             std::memcpy(night_vision_original, night_vision_scale, sizeof night_vision_original);
             // the callers: the closest bl before each call is the "has the effect?" check
             for (size_t j = 0; j < n; j++) {
