@@ -1,15 +1,16 @@
 # Talaz Mods
 
-The mods of [Talaz](https://github.com/danuvia/talaz), a Minecraft Bedrock client by Danuvia. They are one library, `libtalaz_bedrock.so`, which mcpelauncher loads next to the game. Right Shift opens the menu in a world.
+The mods of [Talaz](https://github.com/danuvia/talaz), a Minecraft Bedrock client by Danuvia. They're one library, `libtalaz_bedrock.so`, which mcpelauncher loads next to the game. In a world, Right Shift opens the menu.
 
 ## Layout
 
-- `src/mods.def` lists every mod and its settings, once. The game menu builds its tiles and pages from it, and so does the launcher.
-- `src/mods/` holds the mods, one file each.
-- `src/core/` is what they share: the menu, the title screen, the settings file, finding and hooking things in the game, the world pass the visual mods draw in, and the input the mods watch.
-- `pack/` is the resource pack the launcher puts in the game folder for the title screen.
+`src/mods.def` lists every mod and its settings once. The game menu builds its tiles and pages from it, and the launcher reads it for its Mods page.
 
-A new mod is one `MOD` line in `src/mods.def`, its settings below it, and a file in `src/mods/`. CMake picks the file up by itself; hook it into the frame through `src/core/shared.h`.
+`src/mods/` has one file per mod. `src/core/` holds what they share: the menu, the title screen, the settings file, the tools for finding and hooking things in the game, the world pass the visual mods draw in, and the input the mods watch.
+
+`pack/` is the resource pack the launcher puts in the game folder for the title screen.
+
+To add a mod, write a `MOD` line in `src/mods.def` with its settings below it, and a file in `src/mods/`. CMake picks the file up by itself. The hooks into the frame are declared in `src/core/shared.h`.
 
 ## Building
 
@@ -25,7 +26,7 @@ cmake --build build/arm64 -j8
 
 On Linux use `-DANDROID_ABI=x86_64` and `build/x86_64`. The launcher carries the library inside itself.
 
-`TALAZ_PREVIEW=1` in the game's environment opens the menu at startup, `TALAZ_PREVIEW=zoom` a mod's page. `TALAZ_BENCH=1` logs the frame rate every second, and `TALAZ_BENCH_ONLY=fps,riptide` limits a run to those mods.
+A few variables in the game's environment help while working on the mods. `TALAZ_PREVIEW=1` opens the menu at startup and `TALAZ_PREVIEW=zoom` opens a mod's page. `TALAZ_BENCH=1` logs the frame rate every second, and `TALAZ_BENCH_ONLY=fps,riptide` runs only those mods.
 
 ## License
 
