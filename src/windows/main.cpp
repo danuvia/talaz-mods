@@ -24,6 +24,10 @@
 #include "menu.h"
 #include "mods.h"
 
+namespace mods {
+void motionblur_dx11(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11Resource* buffer, ID3D11RenderTargetView* target, bool in_world);
+}
+
 namespace {
 
 using PresentFn = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT);
@@ -47,6 +51,7 @@ struct {
 } gfx;
 
 HWND window = nullptr;
+bool mouse_locked();
 WNDPROC real_wndproc = nullptr;
 // the buffer this frame draws into, for the title screen's pixel
 ID3D11Resource* frame_buffer = nullptr;
@@ -196,6 +201,9 @@ HRESULT STDMETHODCALLTYPE present(IDXGISwapChain* chain, UINT sync, UINT flags) 
             DXGI_SWAP_CHAIN_DESC desc{};
             chain->GetDesc(&desc);
             frame_buffer = gfx.buffers[index];
+            // the world's blur goes under the menu and HUDs, with last frame's turn since the core ticks inside menu::frame
+            mods::motionblur_dx11(gfx.device, gfx.context, frame_buffer, gfx.targets[index], mouse_locked());
+            gfx.context->OMSetRenderTargets(1, &gfx.targets[index], nullptr);
             menu::frame(int(desc.BufferDesc.Width), int(desc.BufferDesc.Height));
             frame_buffer = nullptr;
             if (gfx.d3d12)
