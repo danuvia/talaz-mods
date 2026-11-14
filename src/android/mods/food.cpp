@@ -152,6 +152,29 @@ void* moved_to(void* ctx, void* control) {
     return screen;
 }
 
+// Exhaustion's checks, drawn before the game draws the bar so the shanks sit over them.
+// Exhaustion grows from the right a column at a time, 80 columns at 4
+void draw_exhaustion(char* self, void* ctx, void* control) {
+    int spare = self[0x12] ? 0 : 1;
+    char* batch = self + 0xe8 + spare * 0x228;
+    if (!fn<bool (*)(void*)>(0xcfaad5c)(batch))
+        return;
+    long columns = std::clamp(std::lround(player_exhaustion / 4 * 80), 0L, 80L);
+    size_t whole = size_t(columns / 8), part = size_t(columns % 8);
+    if (!whole && !part)
+        return;
+    void* screen = moved_to(ctx, control);
+    auto draw = fn<void (*)(void*, void*, void*, size_t, const void*, float)>(0x6360ffc);
+    const char* places = self + 0xdd8;
+    float alpha;
+    std::memcpy(&alpha, self + 8, sizeof alpha);
+    if (whole)
+        draw(screen, batch, textures[9].bytes, whole, places, alpha);
+    if (part)
+        draw(screen, batch, textures[1 + part].bytes, 1, places + whole * 12, alpha);
+    fn<void (*)(Blob*)>(0xcfa9f70)(&transform);
+}
+
 // The bar keeps its shanks' places at +0xdd8, 12 bytes each, the first shank's first,
 // and draws through six batches at +0xe8, one per texture. A hunger effect uses the odd
 // ones and otherwise the even ones, so the three it isn't using are free for ours
@@ -171,15 +194,6 @@ void draw_extra(char* self, void* ctx, void* client, void* control) {
     const char* places = self + 0xdd8;
     float alpha;
     std::memcpy(&alpha, self + 8, sizeof alpha);
-    // exhaustion grows from the right a column at a time, 80 columns at 4
-    if (config::get("food.exhaustion") != 0) {
-        long columns = std::clamp(std::lround(player_exhaustion / 4 * 80), 0L, 80L);
-        size_t whole = size_t(columns / 8), part = size_t(columns % 8);
-        if (whole)
-            draw(screen, batch(0), textures[9].bytes, whole, places, alpha);
-        if (part)
-            draw(screen, batch(0), textures[1 + part].bytes, 1, places + whole * 12, alpha);
-    }
     size_t full = size_t(std::clamp(player_saturation / 2, 0.f, 10.f));
     if (full)
         draw(screen, batch(2), textures[0].bytes, full, places, alpha);
@@ -257,9 +271,13 @@ void draw_hearts(char* self, void* ctx, void* control) {
 }
 
 void (*real_render)(void*, void*, void*, void*, int, float*) = nullptr;
+bool bar_ready = false;  // the bar has drawn once, so its places and batches are set
 void render_hook(void* self, void* ctx, void* client, void* control, int pass, float* area) {
-    real_render(self, ctx, client, control, pass, area);
     auto* bar = static_cast<char*>(self);
+    if (bar_ready && drawable && enabled("food") && bar[0x11] && player_exhaustion > 0 && config::get("food.exhaustion") != 0)
+        draw_exhaustion(bar, ctx, control);
+    real_render(self, ctx, client, control, pass, area);
+    bar_ready = bar_ready || area[1] - area[0] > 40;
     if (drawable && enabled("food") && bar[0x11] && player_saturation >= 0 && area[1] - area[0] > 40)
         draw_extra(bar, ctx, client, control);
 }
