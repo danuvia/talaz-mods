@@ -41,6 +41,7 @@ void read_player(void* camera) {
     auto* player = static_cast<char*>(get_player(client));
     if (!player)
         return;
+    read_food(player);
     float y = *reinterpret_cast<float*>(player + 0x544), prev = *reinterpret_cast<float*>(player + 0x550);
     player_rise = std::isfinite(y) && std::isfinite(prev) ? y - prev : 0;
 }

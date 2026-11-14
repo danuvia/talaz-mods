@@ -31,6 +31,8 @@ void* hook_import(const char* name, void* replacement, Patch patch);
 void zoom_install(const std::vector<Segment>& segs, Patch patch, int major, int minor, int patch_version);
 void nightvision_install(const std::vector<Segment>& segs, Patch patch);
 void riptide_install(Patch patch);
+void food_install(const std::vector<Segment>& segs, Patch patch);
+void read_food(void* player);
 void world_install(Patch patch);
 void camerasway_world(GLint vp[4]);
 void motionblur_world(GLint vp[4]);

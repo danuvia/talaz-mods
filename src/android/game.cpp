@@ -183,6 +183,7 @@ void install() {
     if (!segs.empty() && segs.front().exec) {
         fix_unreadable_image(segs.front().begin, patch);
         watch_paper_doll(segs.front().begin, patch);
+        food_install(segs, patch);
     }
     world_install(patch);
     riptide_install(patch);
