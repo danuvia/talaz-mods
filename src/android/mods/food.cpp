@@ -11,7 +11,9 @@
 #include <cmath>
 #include <cstdint>
 #include <chrono>
+#include <cstdio>
 #include <cstring>
+#include <string>
 #include <string_view>
 
 #include "config.h"
@@ -22,6 +24,8 @@
 #include <cmath>
 
 namespace mods {
+
+void hook_hover(void* any_item);
 
 float player_hunger = -1, player_saturation = -1, player_exhaustion = -1;
 
@@ -90,6 +94,9 @@ void read_held(char* player) {
                 for (const Food& food : FOODS)
                     if (name.substr(10) == food.name)
                         found = &food;
+            // foods are plain Items, so a food's vtable has Item's own tooltip function
+            if (found)
+                hook_hover(item);
         }
     }
     held = found;
@@ -329,6 +336,75 @@ void hook_renderer(const std::vector<Segment>& segs, Patch patch) {
 }  // namespace
 
 
+// The inventory's tooltips: the game asks the item to write its lines through slot 53 of
+// its vtable, and bread and most foods are plain Items, so every vtable that still has
+// Item's own function there gets this one, which adds what the food gives
+// ponytail: items that write their own lines, like stews and potions, get no Food line
+void (*real_hover)(void*, void*, void*, std::string&, bool) = nullptr;
+// Food's icons on the glyph page the launcher builds, font/glyph_E2.png
+std::string glyph(int cell) {
+    char32_t c = 0xe200 + cell;
+    return {char(0xe0 | (c >> 12)), char(0x80 | ((c >> 6) & 0x3f)), char(0x80 | (c & 0x3f))};
+}
+
+// A row of shanks for points, two to a shank, the last one half when points are odd
+std::string shanks(int points, int full_cell) {
+    std::string row;
+    for (int i = 0; i + 1 < points; i += 2)
+        row += glyph(full_cell);
+    if (points % 2)
+        row += glyph(full_cell + 1);
+    return row;
+}
+
+// the foods that make you hungry, shown with the game's green shanks
+bool hungering(std::string_view name) {
+    for (std::string_view bad : {"chicken", "rotten_flesh", "spider_eye", "poisonous_potato", "pufferfish"})
+        if (name == bad)
+            return true;
+    return false;
+}
+
+void hover_hook(void* item, void* stack, void* level, std::string& text, bool advanced) {
+    real_hover(item, stack, level, text, advanced);
+    if (!enabled("food"))
+        return;
+    std::string_view name = text_at(static_cast<char*>(item) + 0xf0);
+    if (name.substr(0, 10) != "minecraft:")
+        return;
+    for (const Food& food : FOODS)
+        if (name.substr(10) == food.name) {
+            int saturation = std::max(1, int(std::lround(food.saturation)));
+            text += "\n" + shanks(food.nutrition, hungering(food.name) ? 2 : 0) + "\n" + shanks(saturation, 4);
+        }
+}
+
+// Hooked the first time an item is read, from that item's own vtable
+std::vector<Segment> hover_segs;
+Patch hover_patch = nullptr;
+void hook_hover(void* any_item) {
+    static bool done = false;
+    if (done || !hover_patch)
+        return;
+    done = true;
+    void** vtable = *static_cast<void***>(any_item);
+    void* original = vtable[53];
+    if (!in_code(hover_segs, original))
+        return;
+    real_hover = reinterpret_cast<decltype(real_hover)>(original);
+    void* hook = reinterpret_cast<void*>(&hover_hook);
+    int count = 0;
+    for (const Segment& seg : hover_segs) {
+        if (seg.exec)
+            continue;
+        auto** words = reinterpret_cast<void**>(seg.begin);
+        for (size_t i = 0; i < seg.size / sizeof(void*); i++)
+            if (words[i] == original)
+                hover_patch(words + i, &hook, sizeof hook), count++;
+    }
+    log_info("Food put its line in %d item tooltips", count);
+}
+
 void food_install(const std::vector<Segment>& segs, Patch patch) {
     base = segs.front().begin;
     // stp x29, x30, [sp, #-0x20]!; str x19, [sp, #0x10]; mov x29, sp; mov x19, x1
@@ -343,6 +419,8 @@ void food_install(const std::vector<Segment>& segs, Patch patch) {
     exhaustion = base + 0x1071b2d0;
     health = base + 0x1071a700;
     hook_renderer(segs, patch);
+    hover_segs = segs;
+    hover_patch = patch;
 }
 
 void read_food(void* player) {
