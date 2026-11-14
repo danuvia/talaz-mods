@@ -386,8 +386,13 @@ void hook_hover(void* any_item) {
     static bool done = false;
     if (done || !hover_patch)
         return;
-    done = true;
     void** vtable = *static_cast<void***>(any_item);
+    // only a plain Item's vtable has Item's own function; foods with effects are subclasses
+    // that write their own lines, so this waits until a plain one is held
+    const char* type = *reinterpret_cast<const char* const*>(static_cast<char*>(vtable[-1]) + 8);
+    if (std::strcmp(type, "4Item") != 0)
+        return;
+    done = true;
     void* original = vtable[53];
     if (!in_code(hover_segs, original))
         return;
