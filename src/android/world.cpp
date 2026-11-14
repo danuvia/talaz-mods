@@ -80,6 +80,11 @@ void world_pass() {
     glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
     glActiveTexture(GL_TEXTURE0);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &tex);
+    // a sampler the game left on the unit would override our copies' filtering, and one
+    // wanting mipmaps makes them read as black
+    GLint sampler;
+    glGetIntegerv(GL_SAMPLER_BINDING, &sampler);
+    glBindSampler(0, 0);
     glGetIntegerv(GL_BLEND_SRC_RGB, &src_rgb);
     glGetIntegerv(GL_BLEND_DST_RGB, &dst_rgb);
     glGetIntegerv(GL_BLEND_SRC_ALPHA, &src_a);
@@ -105,6 +110,7 @@ void world_pass() {
     glUseProgram(prog);
     glBindVertexArray(va);
     glBindTexture(GL_TEXTURE_2D, tex);
+    glBindSampler(0, sampler);
     glActiveTexture(active);
     glBlendFuncSeparate(src_rgb, dst_rgb, src_a, dst_a);
     glBlendEquationSeparate(eq_rgb, eq_a);
