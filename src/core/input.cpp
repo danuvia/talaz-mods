@@ -44,6 +44,7 @@ bool on_key(int key, int action, bool playing) {
         keys[slot] = down;
     }
     zoom_key(key, down, playing);
+    mousetweaks_key(key, down);
     return false;
 }
 
@@ -57,6 +58,10 @@ void on_mouse_button(int button, int action) {
     if (index < 0 || index > 1)
         return;
     bool down = action == BUTTON_PRESS;
+    mousetweaks_button(index, down);
+    // a click Mouse Tweaks sends is the game's business, not a click of the player's
+    if (clicking())
+        return;
     buttons[index] = down;
     if (down)
         huds_click(index);
@@ -65,6 +70,8 @@ void on_mouse_button(int button, int action) {
 bool on_scroll(double dy, bool playing) {
     return zoom_scroll(dy, playing);
 }
+
+void on_cursor(float x, float y) { mousetweaks_cursor(x, y); }
 
 void tick(float dt) {
     // the turn since the last frame, scaled to a 60th of a second so it reads the

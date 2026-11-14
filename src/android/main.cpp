@@ -95,6 +95,9 @@ extern "C" [[gnu::visibility("default")]] void mod_init() {
                 menubar = static_cast<const int*>(host_dlsym(launcher, "_ZN8Settings11menubarsizeE"));
                 // Riptide sets the window's swap interval through the launcher's own window class
                 mods::set_swap_interval_function(host_dlsym(launcher, "_ZN14GLFWGameWindow15setSwapIntervalEi"));
+                // Mouse Tweaks sends its clicks through the launcher's own handlers for GLFW's
+                mods::mousetweaks_connect(host_dlsym(launcher, "glfwGetCurrentContext"),
+                                          host_dlsym(launcher, "_ZN14GLFWGameWindow24_glfwMouseButtonCallbackEP10GLFWwindowiii"));
             }
     }
     menu::connect(is_mouse_locked ? +[] { return is_mouse_locked(get_primary_window()); } : nullptr, menubar);
@@ -105,6 +108,7 @@ extern "C" [[gnu::visibility("default")]] void mod_init() {
     menu::set_renderer(gl_renderer);
     add_swap_buffers_callback(nullptr, [](void*, EGLDisplay display, EGLSurface surface) {
         mods::riptide(surface);
+        mods::mousetweaks_frame();
         EGLint w = 0, h = 0;
         eglQuerySurface(display, surface, EGL_WIDTH, &w);
         eglQuerySurface(display, surface, EGL_HEIGHT, &h);

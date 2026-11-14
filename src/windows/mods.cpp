@@ -8,6 +8,9 @@ namespace mods {
 
 float last_fov = 70, player_rise = 0;
 float player_hunger = -1, player_saturation = -1, player_exhaustion = -1;
+// ponytail: no Mouse Tweaks on Windows yet; send the click with SendInput when the Windows mods are being tested
+void click_again() {}
+bool clicking() { return false; }
 
 void install() {}
 bool paper_doll() { return true; }

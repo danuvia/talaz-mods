@@ -6,6 +6,7 @@
 #include <link.h>
 
 #include <cstring>
+#include <string>
 
 #include "mods.h"
 #include "hooks.h"
@@ -59,6 +60,16 @@ bool in_code(const std::vector<Segment>& segs, const void* p) {
         if (seg.exec && p >= seg.begin && p < seg.begin + seg.size)
             return true;
     return false;
+}
+
+void** vtable_named(const std::vector<Segment>& segs, const char* name) {
+    // the name with the zeros around it, then the typeinfo that points at it, then the
+    // vtable that points at the typeinfo
+    std::string needle = std::string(1, '\0') + name + std::string(1, '\0');
+    std::byte* found = find_string(segs, needle.data(), needle.size());
+    std::byte* name_ref = found ? find_pointer(segs, found + 1) : nullptr;
+    std::byte* typeinfo_ref = name_ref ? find_pointer(segs, name_ref - sizeof(void*)) : nullptr;
+    return typeinfo_ref ? reinterpret_cast<void**>(typeinfo_ref + sizeof(void*)) : nullptr;
 }
 
 // Rewrites the import's slot in the game's table of imports

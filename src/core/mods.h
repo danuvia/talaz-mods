@@ -55,9 +55,13 @@ void on_mouse_button(int button, int action);
 // The game's mouse motion while it holds the mouse, for the camera blur
 void on_look(double dx, double dy);
 bool on_scroll(double dy, bool playing);
+void on_cursor(float x, float y);  // the cursor's place while the game isn't holding the mouse
 
 // Riptide: the launcher's GLFWGameWindow::setSwapInterval, and the per-frame check that applies it
 void set_swap_interval_function(void* function);
+// Mouse Tweaks on Android: the launcher's functions it sends clicks through, and its frame tick
+void mousetweaks_connect(void* context, void* button);
+void mousetweaks_frame();
 void riptide(void* window);
 
 // Called once per frame, before drawing

@@ -70,6 +70,14 @@ void huds_click(int index);
 bool huds_visible();
 void huds_draw(ImDrawList* dl, float u, ImFont* font);
 
+// mousetweaks.cpp, and what each platform gives it: the held left button let go and
+// pressed again for the game, and whether that is being sent right now
+void mousetweaks_key(int key, bool down);
+void mousetweaks_button(int index, bool down);
+void mousetweaks_cursor(float x, float y);
+void click_again();
+bool clicking();
+
 // game.cpp: what the core fixes in the game, and the paper doll setting
 bool paper_doll();
 

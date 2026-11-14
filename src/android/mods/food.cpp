@@ -296,23 +296,12 @@ void hearts_hook(void* self, void* ctx, void* client, void* control, int pass, f
         draw_hearts(static_cast<char*>(self), ctx, control);
 }
 
-void** vtable_of(const std::vector<Segment>& segs, const char* name, size_t size) {
-    std::byte* found = find_string(segs, name, size);
-    std::byte* name_ref = found ? find_pointer(segs, found + 1) : nullptr;
-    std::byte* typeinfo_ref = name_ref ? find_pointer(segs, name_ref - sizeof(void*)) : nullptr;
-    return typeinfo_ref ? reinterpret_cast<void**>(typeinfo_ref + sizeof(void*)) : nullptr;
-}
-
 void hook_renderer(const std::vector<Segment>& segs, Patch patch) {
-    static const char name[] = "\0" "17HudHungerRenderer";
-    std::byte* found = find_string(segs, name, sizeof name);
-    std::byte* name_ref = found ? find_pointer(segs, found + 1) : nullptr;
-    std::byte* typeinfo_ref = name_ref ? find_pointer(segs, name_ref - sizeof(void*)) : nullptr;
-    if (!typeinfo_ref) {
+    void** vtable = vtable_named(segs, "17HudHungerRenderer");
+    if (!vtable) {
         log_error("Food couldn't find the hunger bar");
         return;
     }
-    auto** vtable = reinterpret_cast<void**>(typeinfo_ref + sizeof(void*));
     if (!in_code(segs, vtable[17]))
         return;
     real_render = reinterpret_cast<decltype(real_render)>(vtable[17]);
@@ -322,8 +311,7 @@ void hook_renderer(const std::vector<Segment>& segs, Patch patch) {
     if (!drawable)
         log_error("Food couldn't find how the hunger bar draws");
     // sub sp, sp, #0x90 opens the hearts' render
-    static const char hearts_name[] = "\0" "16HudHeartRenderer";
-    void** hearts = vtable_of(segs, hearts_name, sizeof hearts_name);
+    void** hearts = vtable_named(segs, "16HudHeartRenderer");
     if (drawable && hearts && static_cast<std::byte*>(hearts[17]) == base + 0x63a2ad8 && *reinterpret_cast<uint32_t*>(base + 0x63a2ad8) == 0xd10243ff) {
         real_hearts = reinterpret_cast<decltype(real_hearts)>(hearts[17]);
         void* hook = reinterpret_cast<void*>(&hearts_hook);

@@ -362,6 +362,8 @@ bool mouse_move(double x, double y, bool relative) {
     } else if (!relative) {
         cursor_x = float(x);
         cursor_y = window_y(y);
+        if (!wanted)
+            mods::on_cursor(cursor_x, cursor_y);
     }
     if (wanted && ready)
         ImGui::GetIO().AddMousePosEvent(cursor_x, cursor_y);
