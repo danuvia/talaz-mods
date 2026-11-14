@@ -34,6 +34,11 @@ bool motionblur_step(int width, int height, float& dx, float& dy) {
     float amount = 2 * std::clamp(config::get("motionblur.amount") / 100, 0.f, 1.f);
     dx = look_vx * amount / width;
     dy = -look_vy * amount / height;
+    // a click can arrive with a jump of the mouse across the screen, which would smear the
+    // picture into its edges and black it out, so a smear is kept to a tenth of the picture
+    float length = std::hypot(dx, dy);
+    if (length > 0.1f)
+        dx *= 0.1f / length, dy *= 0.1f / length;
     return std::abs(dx * width) + std::abs(dy * height) >= 0.5f;
 }
 
