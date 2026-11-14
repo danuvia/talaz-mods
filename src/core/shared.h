@@ -37,7 +37,6 @@ bool zoom_scroll(double dy, bool playing);
 void zoom_key(int key, bool down, bool playing);
 extern bool ab_test;  // flipped by TALAZ_AB for comparisons
 extern float player_hunger, player_saturation, player_exhaustion;  // -1 when the game's version hides them
-bool hunger_bar(float& right, float& top, float& unit);  // where the game drew the hunger bar, in pixels and pixels per UI unit
 extern float player_rise;  // blocks the player rose in the last game tick
 extern float last_fov;  // the field of view the world was last drawn with
 
@@ -70,7 +69,6 @@ void huds_tick(float dt);
 void huds_click(int index);
 bool huds_visible();
 void huds_draw(ImDrawList* dl, float u, ImFont* font);
-void food_draw(ImDrawList* dl);
 
 // game.cpp: what the core fixes in the game, and the paper doll setting
 bool paper_doll();

@@ -8,7 +8,6 @@ namespace mods {
 
 float last_fov = 70, player_rise = 0;
 float player_hunger = -1, player_saturation = -1, player_exhaustion = -1;
-bool hunger_bar(float&, float&, float&) { return false; }
 
 void install() {}
 bool paper_doll() { return true; }

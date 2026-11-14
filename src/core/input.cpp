@@ -83,10 +83,7 @@ void tick(float dt) {
 void limit_fps() { fpslimit_wait(); }
 void riptide(void* window) { riptide_apply(window); }
 bool hud_visible() { return huds_visible(); }
-void draw_hud(ImDrawList* dl, float u, ImFont* font) {
-    food_draw(dl);
-    huds_draw(dl, u, font);
-}
+void draw_hud(ImDrawList* dl, float u, ImFont* font) { huds_draw(dl, u, font); }
 
 // The world pass draws nothing over the picture, but it needs the menu's GL functions loaded
 bool effects_visible() {

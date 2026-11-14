@@ -67,47 +67,6 @@ bool huds_visible() {
     return std::any_of(std::begin(HUDS), std::end(HUDS), [](const char* hud) { return enabled(hud); });
 }
 
-// Over the game's hunger bar: saturation as a gold edge around the shanks it covers,
-// each shank two points with the rightmost first, and exhaustion as a faint fill that
-// grows from the right as it counts up to 4
-// the shape of the game's hunger_background icon, 9 by 9: meat up and left, bone down and right
-const char* const SHANK[9] = {
-    "..##.....",
-    ".####....",
-    "######...",
-    "#######..",
-    ".######..",
-    "..#####..",
-    "...######",
-    "......###",
-    "......##.",
-};
-
-bool shank(int x, int y) { return x >= 0 && y >= 0 && x < 9 && y < 9 && SHANK[y][x] == '#'; }
-
-void food_draw(ImDrawList* dl) {
-    float right, top, unit;
-    if (!enabled("food") || player_saturation < 0 || !hunger_bar(right, top, unit))
-        return;
-    const ImU32 gold = IM_COL32(255, 196, 30, 255), faint = IM_COL32(255, 255, 255, 35);
-    float fill = std::clamp(player_exhaustion / 4, 0.f, 1.f) * 81 * unit;
-    dl->AddRectFilled(ImVec2(std::round(right - fill), std::round(top)), ImVec2(std::round(right), std::round(top + 9 * unit)), faint);
-    for (int i = 0; i < 10; i++) {
-        float covered = std::clamp(player_saturation - 2 * i, 0.f, 2.f);
-        if (covered <= 0)
-            break;
-        float left = right - (i * 8 + 9) * unit;
-        // half a shank edges only its right part, like the game's half shank
-        for (int y = 0; y < 9; y++)
-            for (int x = covered >= 2 ? 0 : 4; x < 9; x++) {
-                bool edge = shank(x, y) && !(shank(x - 1, y) && shank(x + 1, y) && shank(x, y - 1) && shank(x, y + 1));
-                if (edge)
-                    dl->AddRectFilled(ImVec2(std::round(left + x * unit), std::round(top + y * unit)),
-                                      ImVec2(std::round(left + (x + 1) * unit), std::round(top + (y + 1) * unit)), gold);
-            }
-    }
-}
-
 // The HUDs stack down from the top left in a fixed order, each below the one
 // before, so they never overlap. The game's paper doll only shows while the player
 // moves, so when it is turned on the HUDs keep beside its spot rather than below
