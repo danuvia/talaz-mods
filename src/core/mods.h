@@ -60,7 +60,7 @@ void on_cursor(float x, float y);  // the cursor's place while the game isn't ho
 // Riptide: the launcher's GLFWGameWindow::setSwapInterval, and the per-frame check that applies it
 void set_swap_interval_function(void* function);
 // Mouse Tweaks on Android: the launcher's functions it sends clicks through, and its frame tick
-void mousetweaks_connect(void* context, void* button);
+void mousetweaks_connect(void* context, void* button, void* key_function);
 void mousetweaks_frame();
 void riptide(void* window);
 

@@ -34,6 +34,7 @@ void riptide_install(Patch patch);
 // A class's vtable, found through its type's name as the compiler writes it, like "9ItemStack"
 void** vtable_named(const std::vector<Segment>& segs, const char* name);
 void food_install(const std::vector<Segment>& segs, Patch patch);
+void mousetweaks_install(const std::vector<Segment>& segs, Patch patch);
 void read_food(void* player);
 void world_install(Patch patch);
 void camerasway_world(GLint vp[4]);

@@ -49,6 +49,8 @@ bool on_key(int key, int action, bool playing) {
 }
 
 void on_look(double dx, double dy) {
+    // the game has the mouse again, so no screen's slot is under it
+    mousetweaks_unhover();
     look_x = look_x + float(dx);
     look_y = look_y + float(dy);
 }
@@ -68,7 +70,7 @@ void on_mouse_button(int button, int action) {
 }
 
 bool on_scroll(double dy, bool playing) {
-    return zoom_scroll(dy, playing);
+    return zoom_scroll(dy, playing) || mousetweaks_scroll(playing);
 }
 
 void on_cursor(float x, float y) { mousetweaks_cursor(x, y); }

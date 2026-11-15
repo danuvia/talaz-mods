@@ -64,12 +64,22 @@ bool in_code(const std::vector<Segment>& segs, const void* p) {
 
 void** vtable_named(const std::vector<Segment>& segs, const char* name) {
     // the name with the zeros around it, then the typeinfo that points at it, then the
-    // vtable that points at the typeinfo
+    // vtable that points at the typeinfo. A class others derive from has its typeinfo
+    // pointed at by theirs too, so the vtable is the place with a zero before it (how far
+    // the object's start is) and a function after
     std::string needle = std::string(1, '\0') + name + std::string(1, '\0');
     std::byte* found = find_string(segs, needle.data(), needle.size());
     std::byte* name_ref = found ? find_pointer(segs, found + 1) : nullptr;
-    std::byte* typeinfo_ref = name_ref ? find_pointer(segs, name_ref - sizeof(void*)) : nullptr;
-    return typeinfo_ref ? reinterpret_cast<void**>(typeinfo_ref + sizeof(void*)) : nullptr;
+    if (!name_ref)
+        return nullptr;
+    void* typeinfo = name_ref - sizeof(void*);
+    for (const Segment& seg : segs) {
+        auto** words = reinterpret_cast<void**>(seg.begin);
+        for (size_t i = 1; i + 1 < seg.size / sizeof(void*); i++)
+            if (words[i] == typeinfo && !words[i - 1] && in_code(segs, words[i + 1]))
+                return words + i + 1;
+    }
+    return nullptr;
 }
 
 // Rewrites the import's slot in the game's table of imports
@@ -195,6 +205,7 @@ void install() {
         fix_unreadable_image(segs.front().begin, patch);
         watch_paper_doll(segs.front().begin, patch);
         food_install(segs, patch);
+        mousetweaks_install(segs, patch);
     }
     world_install(patch);
     riptide_install(patch);

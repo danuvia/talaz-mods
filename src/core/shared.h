@@ -70,11 +70,19 @@ void huds_click(int index);
 bool huds_visible();
 void huds_draw(ImDrawList* dl, float u, ImFont* font);
 
-// mousetweaks.cpp, and what each platform gives it: the held left button let go and
-// pressed again for the game, and whether that is being sent right now
+// mousetweaks.cpp, and what each platform gives it: whether the mouse is over a slot of
+// the player's or a container's items, whether it came onto one since last asked, a left
+// click sent to the game (with Shift held for it if asked), the held left button or the
+// held drop key let go and pressed again, and whether one of those is being sent right now
 void mousetweaks_key(int key, bool down);
 void mousetweaks_button(int index, bool down);
+bool mousetweaks_scroll(bool playing);
 void mousetweaks_cursor(float x, float y);
+void mousetweaks_unhover();
+bool slot_hovered();
+bool entered_slot();
+void drop_again();
+void click_once(bool hold_shift);
 void click_again();
 bool clicking();
 

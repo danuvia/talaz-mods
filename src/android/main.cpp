@@ -97,7 +97,8 @@ extern "C" [[gnu::visibility("default")]] void mod_init() {
                 mods::set_swap_interval_function(host_dlsym(launcher, "_ZN14GLFWGameWindow15setSwapIntervalEi"));
                 // Mouse Tweaks sends its clicks through the launcher's own handlers for GLFW's
                 mods::mousetweaks_connect(host_dlsym(launcher, "glfwGetCurrentContext"),
-                                          host_dlsym(launcher, "_ZN14GLFWGameWindow24_glfwMouseButtonCallbackEP10GLFWwindowiii"));
+                                          host_dlsym(launcher, "_ZN14GLFWGameWindow24_glfwMouseButtonCallbackEP10GLFWwindowiii"),
+                                          host_dlsym(launcher, "_ZN14GLFWGameWindow16_glfwKeyCallbackEP10GLFWwindowiiii"));
             }
     }
     menu::connect(is_mouse_locked ? +[] { return is_mouse_locked(get_primary_window()); } : nullptr, menubar);

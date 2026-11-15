@@ -10,6 +10,11 @@ float last_fov = 70, player_rise = 0;
 float player_hunger = -1, player_saturation = -1, player_exhaustion = -1;
 // ponytail: no Mouse Tweaks on Windows yet; send the click with SendInput when the Windows mods are being tested
 void click_again() {}
+void click_once(bool) {}
+bool slot_hovered() { return false; }
+bool entered_slot() { return false; }
+void drop_again() {}
+void mousetweaks_unhover() {}
 bool clicking() { return false; }
 
 void install() {}
