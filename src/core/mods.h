@@ -66,6 +66,8 @@ void riptide(void* window);
 
 // Called once per frame, before drawing
 void tick(float dt);
+// Toggle Sprint: once a frame, holds the sprint key down again after the game dropped it
+void togglesprint_frame(bool playing);
 bool hud_visible();
 // Whether the world pass's mods are on, which need the GL functions loaded
 bool effects_visible();

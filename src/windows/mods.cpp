@@ -14,6 +14,7 @@ void click_once(bool) {}
 bool slot_hovered() { return false; }
 bool entered_slot() { return false; }
 void drop_again() {}
+void send_sprint(bool) {}
 void mousetweaks_unhover() {}
 bool clicking() { return false; }
 

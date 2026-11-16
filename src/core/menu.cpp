@@ -659,6 +659,7 @@ void frame(int w, int h) {
     dt = std::clamp(dt, 1 / 1000.f, 0.25f);
     last_frame = now;
     mods::tick(dt);
+    mods::togglesprint_frame(playing() && !wanted);
     step_water(dt);
     mods::limit_fps();
     // the HUDs show over a world being played, not over the game's screens; off a

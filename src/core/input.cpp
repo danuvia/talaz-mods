@@ -36,6 +36,9 @@ bool on_key(int key, int action, bool playing) {
     if (action != KEY_PRESS && action != KEY_RELEASE)
         return false;
     bool down = action == KEY_PRESS;
+    // a key the mods sent themselves is the game's business only
+    if (clicking())
+        return false;
     if (togglesprint_key(key, down, playing))
         return true;
     if (int slot = key_slot(key); slot >= 0) {

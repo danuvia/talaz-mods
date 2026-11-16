@@ -155,6 +155,17 @@ void click_once(bool hold_shift) {
     sending = false;
 }
 
+// The sprint key, pressed or let go for the game without the player's hand; GLFW's own
+// code for Left Control, since this goes in where the keyboard does
+void send_sprint(bool down) {
+    void* w = window;
+    if (!w || !key)
+        return;
+    sending = true;
+    key(w, 341, 0, down ? PRESS : RELEASE, 0);
+    sending = false;
+}
+
 // The drop key is down already, so it's let go and pressed again for the new slot
 void drop_again() {
     void* w = window;

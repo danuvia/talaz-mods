@@ -45,6 +45,10 @@ void nightvision_tick();
 
 // togglesprint.cpp: true when the game should not see the key
 bool togglesprint_key(int key, bool down, bool playing);
+// once a frame: holds the sprint key down again after the game dropped it
+void togglesprint_frame(bool playing);
+// the sprint key for the game, from the mod (Android only)
+void send_sprint(bool down);
 
 // fpslimit.cpp
 void fpslimit_wait();
