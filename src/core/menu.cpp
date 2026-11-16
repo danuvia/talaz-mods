@@ -278,15 +278,19 @@ void step_water(float dt) {
         bool on = mods::enabled(m.id);
         // the first look settles the water where it belongs, without a wave
         if (!m.seen)
-            m.seen = true, m.was_on = on, m.level = on ? 0.4f : -0.2f;
+            m.seen = true, m.was_on = on, m.level = on ? 0.34f : -0.2f;
         if (on && !m.was_on)
             m.cover = 0, m.level = 0.9f, m.vel = 0;
         m.was_on = on;
         if (m.cover < 1)
             m.cover = std::min(1.f, m.cover + dt / 0.45f);
-        float target = !on ? -0.2f : m.cover < 1 ? 0.92f : 0.4f;
-        m.vel += ((target - m.level) * 60 - m.vel * 8) * dt;
-        m.level += m.vel * dt;
+        float target = !on ? -0.2f : m.cover < 1 ? 1.f : 0.34f;
+        // the spring blows up on a long step, as after a hitch in the game, so it moves in small ones
+        for (float left = std::min(dt, 0.05f); left > 0; left -= 1 / 120.f) {
+            float h = std::min(left, 1 / 120.f);
+            m.vel += ((target - m.level) * 60 - m.vel * 8) * h;
+            m.level += m.vel * h;
+        }
     }
 }
 
