@@ -17,10 +17,16 @@ namespace {
 
 Mod list[] = {
 #define MOD(id, name, note, on) {#id, name, note},
+#ifdef _WIN32
+#define GAMEMOD(...)
+#else
+#define GAMEMOD(id, name, note, on) {#id, name, note},
+#endif
 #define SLIDER(...)
 #define SWITCH(...)
 #include "mods.def"
 #undef MOD
+#undef GAMEMOD
 #undef SLIDER
 #undef SWITCH
 };
@@ -28,10 +34,12 @@ Mod list[] = {
 // a slider from min to max, or a switch when there is no step
 const Setting SETTINGS[] = {
 #define MOD(...)
+#define GAMEMOD(...)
 #define SLIDER(mod, name, key, unit, min, max, step, value) {#mod, name, key, unit, min, max, step},
 #define SWITCH(mod, name, key, value) {#mod, name, key},
 #include "mods.def"
 #undef MOD
+#undef GAMEMOD
 #undef SLIDER
 #undef SWITCH
 };
@@ -43,10 +51,12 @@ struct Declared {
 };
 const Declared DEFAULTS[] = {
 #define MOD(id, name, note, on) {#id ".enabled", on},
+#define GAMEMOD(id, name, note, on) {#id ".enabled", on},
 #define SLIDER(mod, name, key, unit, min, max, step, value) {key, value},
 #define SWITCH(mod, name, key, value) {key, value},
 #include "mods.def"
 #undef MOD
+#undef GAMEMOD
 #undef SLIDER
 #undef SWITCH
 };

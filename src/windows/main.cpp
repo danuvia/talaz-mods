@@ -36,6 +36,8 @@ using ExecuteFn = void(STDMETHODCALLTYPE*)(ID3D12CommandQueue*, UINT, ID3D12Comm
 PresentFn real_present = nullptr;
 ResizeBuffersFn real_resize = nullptr;
 ExecuteFn real_execute = nullptr;
+using ResizeBuffers1Fn = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT, const UINT*, IUnknown* const*);
+ResizeBuffers1Fn real_resize1 = nullptr;
 
 // the game's direct command queue, which D3D11On12 has to share
 ID3D12CommandQueue* game_queue = nullptr;
@@ -220,6 +222,14 @@ HRESULT STDMETHODCALLTYPE resize_buffers(IDXGISwapChain* chain, UINT count, UINT
     return real_resize(chain, count, w, h, format, flags);
 }
 
+// D3D12 games resize with ResizeBuffers1, which fails while we still hold the old buffers,
+// and leaving full screen then took the game down
+HRESULT STDMETHODCALLTYPE resize_buffers1(IDXGISwapChain* chain, UINT count, UINT w, UINT h, DXGI_FORMAT format, UINT flags, const UINT* masks, IUnknown* const* queues) {
+    if (chain == gfx.chain)
+        release_targets();
+    return real_resize1(chain, count, w, h, format, flags, masks, queues);
+}
+
 void STDMETHODCALLTYPE execute(ID3D12CommandQueue* queue, UINT count, ID3D12CommandList* const* lists) {
     if (!game_queue && queue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT)
         game_queue = queue;
@@ -318,6 +328,8 @@ bool hook_dxgi() {
         // IDXGISwapChain: Present is slot 8, ResizeBuffers 13; ID3D12CommandQueue: ExecuteCommandLists is 10
         patch_slot(chain_vt + 8, reinterpret_cast<void*>(&present), reinterpret_cast<void**>(&real_present));
         patch_slot(chain_vt + 13, reinterpret_cast<void*>(&resize_buffers), reinterpret_cast<void**>(&real_resize));
+        // IDXGISwapChain3::ResizeBuffers1
+        patch_slot(chain_vt + 39, reinterpret_cast<void*>(&resize_buffers1), reinterpret_cast<void**>(&real_resize1));
         patch_slot(queue_vt + 10, reinterpret_cast<void*>(&execute), reinterpret_cast<void**>(&real_execute));
         done = true;
     }
@@ -358,6 +370,22 @@ DWORD WINAPI start(void*) {
         return 0;
     }
     real_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&wndproc)));
+    // Motion Blur turns with raw mouse motion; newer versions read the mouse through GameInput
+    // and register no raw input, so ask for it ourselves when nobody has
+    UINT registered = 0;
+    GetRegisteredRawInputDevices(nullptr, &registered, sizeof(RAWINPUTDEVICE));
+    std::vector<RAWINPUTDEVICE> devices(registered);
+    if (registered)
+        GetRegisteredRawInputDevices(devices.data(), &registered, sizeof(RAWINPUTDEVICE));
+    bool has_mouse = false;
+    for (auto& d : devices)
+        has_mouse |= d.usUsagePage == 1 && d.usUsage == 2;
+    if (!has_mouse) {
+        RAWINPUTDEVICE mouse{1, 2, 0, window};
+        log_info("Raw mouse input: %s", RegisterRawInputDevices(&mouse, 1, sizeof mouse) ? "registered by Talaz" : "couldn't register");
+    } else {
+        log_info("Raw mouse input: the game has it");
+    }
     log_info("Talaz is in");
     return 0;
 }
